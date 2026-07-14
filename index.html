@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>بيت الممبار | أكل بيتي مصري</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#FAF3E7;
+    --surface:#FFFCF5;
+    --maroon:#6B1E23;
+    --maroon-dark:#4A1418;
+    --gold:#C89B3C;
+    --olive:#4A5D3A;
+    --ink:#2B1B14;
+    --muted:#8A7A6B;
+    --line: rgba(43,27,20,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Tajawal',sans-serif;}
+  h1,h2,h3,.display{font-family:'Aref Ruqaa',serif;}
+  a{text-decoration:none;color:inherit;}
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:var(--maroon);
+    color:#fff3e0;
+    padding:14px 20px;
+    display:flex;align-items:center;justify-content:space-between;
+    box-shadow:0 2px 10px rgba(0,0,0,.15);
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .seal{
+    width:46px;height:46px;border-radius:50%;
+    background:var(--gold);
+    display:flex;align-items:center;justify-content:center;
+    border:3px dashed var(--maroon-dark);
+    box-shadow:0 0 0 2px var(--gold);
+    flex-shrink:0;
+  }
+  .seal svg{width:24px;height:24px;fill:var(--maroon-dark);}
+  .brand-text .display{font-size:22px;line-height:1;margin:0;}
+  .brand-text small{display:block;font-size:11px;color:#e8cfa0;margin-top:3px;letter-spacing:.5px;}
+  #cart-btn{
+    background:var(--gold);color:var(--maroon-dark);
+    border:none;padding:10px 16px;border-radius:30px;
+    font-family:'Tajawal';font-weight:900;font-size:14px;
+    display:flex;align-items:center;gap:8px;cursor:pointer;
+  }
+  #cart-count{
+    background:var(--maroon-dark);color:#fff;border-radius:50%;
+    width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;
+    font-size:12px;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;overflow:hidden;
+    background:
+      repeating-linear-gradient(135deg, rgba(107,30,35,0.04) 0 2px, transparent 2px 22px),
+      var(--surface);
+    padding:38px 20px 26px;
+    text-align:center;
+    border-bottom:2px dashed var(--line);
+  }
+  .hero .display{font-size:34px;color:var(--maroon);margin:0 0 6px;}
+  .hero p{margin:0;color:var(--muted);font-size:15px;}
+  .tape{
+    display:inline-block;margin-top:14px;background:var(--olive);color:#f4f1e6;
+    padding:5px 16px;border-radius:3px;font-size:12px;letter-spacing:1px;
+    transform:rotate(-1deg);
+  }
+
+  /* ---------- Category nav ---------- */
+  .cat-nav{
+    position:sticky;top:74px;z-index:40;
+    background:var(--bg);
+    display:flex;gap:10px;overflow-x:auto;padding:14px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .cat-nav::-webkit-scrollbar{display:none;}
+  .cat-pill{
+    flex:0 0 auto;background:var(--surface);border:1.5px solid var(--maroon);
+    color:var(--maroon);padding:7px 16px;border-radius:20px;font-size:13px;font-weight:700;
+    white-space:nowrap;cursor:pointer;transition:.2s;
+  }
+  .cat-pill.active, .cat-pill:hover{background:var(--maroon);color:#fff3e0;}
+
+  /* ---------- Menu ---------- */
+  main{max-width:960px;margin:0 auto;padding:10px 16px 100px;}
+  .category-block{margin-top:34px;scroll-margin-top:150px;}
+  .cat-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .cat-header .tag{
+    background:var(--maroon);color:#fff3e0;font-family:'Aref Ruqaa';font-size:20px;
+    padding:6px 18px 6px 24px;border-radius:0 20px 20px 0;position:relative;
+  }
+  .cat-header .tag::after{
+    content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);
+    width:0;height:0;border-top:14px solid transparent;border-bottom:14px solid transparent;
+    border-left:10px solid var(--maroon);
+  }
+  .cat-header::before{content:'';flex:1;border-top:1px dashed var(--line);}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    padding:14px;display:flex;flex-direction:column;gap:8px;position:relative;
+    transition:transform .15s, box-shadow .15s;
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(43,27,20,.08);}
+  .card.unavailable{opacity:.55;}
+  .card-name{font-weight:700;font-size:15.5px;}
+  .card-price-row{display:flex;align-items:baseline;justify-content:space-between;}
+  .price{color:var(--maroon);font-weight:900;font-size:17px;}
+  .unit-badge{font-size:11px;color:var(--muted);background:rgba(138,122,107,.12);padding:2px 8px;border-radius:8px;}
+  .note{font-size:12.5px;color:var(--olive);font-weight:700;}
+  .ribbon{
+    position:absolute;top:-8px;left:10px;background:var(--gold);color:var(--maroon-dark);
+    font-size:11px;font-weight:900;padding:3px 10px;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,.15);
+  }
+  .qty-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;}
+  .stepper{display:flex;align-items:center;border:1.5px solid var(--maroon);border-radius:20px;overflow:hidden;}
+  .stepper button{background:var(--surface);border:none;width:30px;height:30px;font-size:16px;color:var(--maroon);cursor:pointer;font-weight:900;}
+  .stepper input{width:44px;border:none;text-align:center;background:transparent;font-weight:700;font-family:'Tajawal';}
+  .add-btn{
+    background:var(--maroon);color:#fff3e0;border:none;border-radius:20px;
+    padding:7px 14px;font-weight:700;font-size:13px;cursor:pointer;flex:1;
+  }
+  .add-btn:disabled{background:var(--muted);cursor:not-allowed;}
+  .contact-note{font-size:12px;color:var(--muted);}
+
+  /* ---------- Cart drawer ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(43,27,20,.45);z-index:60;display:none;}
+  .overlay.open{display:block;}
+  .drawer{
+    position:fixed;top:0;bottom:0;left:0;width:min(400px,92vw);
+    background:var(--surface);z-index:70;transform:translateX(-105%);
+    transition:transform .3s ease;display:flex;flex-direction:column;
+    box-shadow:6px 0 20px rgba(0,0,0,.2);
+  }
+  .drawer.open{transform:translateX(0);}
+  .drawer-head{padding:18px;background:var(--maroon);color:#fff3e0;display:flex;justify-content:space-between;align-items:center;}
+  .drawer-head .display{font-size:20px;margin:0;}
+  .close-x{background:none;border:none;color:#fff3e0;font-size:22px;cursor:pointer;}
+  .drawer-body{flex:1;overflow-y:auto;padding:14px 18px;}
+  .cart-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line);gap:8px;}
+  .cart-item .ci-name{font-weight:700;font-size:14px;}
+  .cart-item .ci-meta{font-size:12px;color:var(--muted);}
+  .cart-item .ci-remove{background:none;border:none;color:var(--maroon);cursor:pointer;font-size:13px;}
+  .empty-cart{text-align:center;color:var(--muted);padding:40px 10px;}
+  .drawer-foot{padding:16px 18px;border-top:1px solid var(--line);background:var(--bg);}
+  .row-between{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;}
+  .row-between.total{font-weight:900;font-size:17px;color:var(--maroon);}
+  .checkout-btn{
+    width:100%;background:var(--maroon);color:#fff3e0;border:none;padding:13px;
+    border-radius:10px;font-weight:900;font-size:15px;cursor:pointer;margin-top:8px;
+  }
+  .checkout-btn:disabled{background:var(--muted);}
+
+  /* ---------- Modal (checkout) ---------- */
+  .modal{
+    position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:16px;
+  }
+  .modal.open{display:flex;}
+  .modal-box{
+    background:var(--surface);border-radius:14px;max-width:440px;width:100%;
+    max-height:90vh;overflow-y:auto;padding:22px;position:relative;
+  }
+  .modal-box h2{color:var(--maroon);margin-top:0;font-size:24px;}
+  label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px;color:var(--ink);}
+  input[type=text], input[type=tel], textarea{
+    width:100%;border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;
+    font-family:'Tajawal';font-size:14px;background:#fff;
+  }
+  textarea{resize:vertical;min-height:60px;}
+  .order-type-row{display:flex;gap:10px;}
+  .ot-btn{
+    flex:1;padding:10px;border:1.5px solid var(--maroon);border-radius:8px;background:var(--surface);
+    color:var(--maroon);font-family:'Tajawal';font-weight:700;font-size:13.5px;cursor:pointer;
+  }
+  .ot-btn.active{background:var(--maroon);color:#fff3e0;}
+  .locate-btn{
+    width:100%;background:var(--olive);color:#fff;border:none;padding:11px;border-radius:8px;
+    font-weight:700;font-size:13.5px;cursor:pointer;
+  }
+  .locate-btn.located{background:#2c6b2f;}
+  #location-status{font-size:12.5px;margin-top:6px;color:var(--muted);}
+  #location-status.ok{color:var(--olive);font-weight:700;}
+  #location-status.err{color:#c0392b;font-weight:700;}
+  .coupon-row{display:flex;gap:8px;}
+  .coupon-row input{flex:1;}
+  .coupon-row button{
+    background:var(--olive);color:#fff;border:none;border-radius:8px;padding:0 14px;font-weight:700;cursor:pointer;
+  }
+  #coupon-msg{font-size:12.5px;margin-top:4px;}
+  .success-box{text-align:center;padding:10px;}
+  .success-seal{
+    width:70px;height:70px;border-radius:50%;background:var(--olive);color:#fff;
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:34px;
+  }
+
+  footer{text-align:center;padding:24px;color:var(--muted);font-size:12.5px;}
+
+  @media (max-width:480px){
+    .hero .display{font-size:26px;}
+    .cat-header .tag{font-size:17px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="seal"><img src="logo.png" alt="بيت الممبار" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></div>
+    <div class="brand-text">
+      <p class="display">بيت الممبار</p>
+      <small>أكل بيتي مصري أصيل</small>
+    </div>
+  </div>
+  <button id="cart-btn" onclick="openCart()">
+    🧺 السلة <span id="cart-count">0</span>
+  </button>
+</header>
+
+<div class="hero">
+  <h1 class="display">من بيتنا لبيتك 🍲</h1>
+  <p>طيور طازة، لحوم مفرزة، وأكل جاهز على أصول البيت المصري</p>
+  <div class="tape">اطلب الآن — التوصيل داخل الرياض فقط</div>
+</div>
+
+<nav class="cat-nav" id="cat-nav"></nav>
+
+<main id="menu-root">
+  <p style="text-align:center;color:var(--muted);padding:40px 0;">جاري تحميل المنيو...</p>
+</main>
+
+<footer>بيت الممبار © 2026</footer>
+
+<!-- Cart overlay + drawer -->
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <h3 class="display">سلة الطلب</h3>
+    <button class="close-x" onclick="closeAll()">✕</button>
+  </div>
+  <div class="drawer-body" id="cart-body">
+    <div class="empty-cart">السلة فاضية لسه 🧺</div>
+  </div>
+  <div class="drawer-foot">
+    <div class="row-between"><span>الإجمالي الفرعي</span><span id="sum-subtotal">0 ريال</span></div>
+    <button class="checkout-btn" id="go-checkout" onclick="openCheckout()" disabled>إتمام الطلب</button>
+  </div>
+</div>
+
+<!-- Checkout modal -->
+<div class="modal" id="checkout-modal">
+  <div class="modal-box" id="checkout-box">
+    <h2>بيانات الطلب</h2>
+    <label>الاسم</label>
+    <input type="text" id="f-name" placeholder="اسمك">
+    <label>رقم الجوال</label>
+    <input type="tel" id="f-phone" placeholder="05xxxxxxxx">
+    <label>نوع الطلب</label>
+    <div class="order-type-row">
+      <button type="button" class="ot-btn active" id="ot-delivery" onclick="setOrderType('delivery')">🚚 توصيل</button>
+      <button type="button" class="ot-btn" id="ot-pickup" onclick="setOrderType('pickup')">🏪 استلام من المحل</button>
+    </div>
+    <div id="address-section">
+      <label>الموقع</label>
+      <button type="button" class="locate-btn" onclick="detectLocation()">📍 حدد موقعي تلقائيًا</button>
+      <div id="location-status"></div>
+    </div>
+    <label>ملاحظات (اختياري)</label>
+    <textarea id="f-notes" placeholder="أي طلب خاص؟"></textarea>
+    <label>كوبون خصم</label>
+    <div class="coupon-row">
+      <input type="text" id="f-coupon" placeholder="اكتب الكود">
+      <button onclick="applyCoupon()">تفعيل</button>
+    </div>
+    <div id="coupon-msg"></div>
+
+    <div style="margin-top:16px;border-top:1px dashed var(--line);padding-top:12px;">
+      <div class="row-between"><span>الإجمالي الفرعي</span><span id="chk-subtotal">0 ريال</span></div>
+      <div class="row-between" id="chk-discount-row" style="display:none;color:var(--olive);"><span>الخصم</span><span id="chk-discount">0 ريال</span></div>
+      <div class="row-between total"><span>الإجمالي</span><span id="chk-total">0 ريال</span></div>
+    </div>
+    <button class="checkout-btn" id="submit-order" onclick="submitOrder()">تأكيد الطلب</button>
+  </div>
+</div>
+
+<script>
+// ============================================
+// إعدادات Supabase — عدّل الرابط بتاعك هنا
+// ============================================
+const SUPABASE_URL = 'https://ktusgmekunlnexynxigj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_QUdF9kkmmBY-WOaX-2Y5Hw_Sekd0fSX';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let PRODUCTS = [];
+let CART = {}; // product_id -> {product, qty}
+let appliedCoupon = null;
+let orderType = 'delivery';
+let userLocation = null; // {lat, lng}
+
+// حدود تقريبية لمدينة الرياض
+const RIYADH_BOUNDS = { minLat: 24.35, maxLat: 25.10, minLng: 46.35, maxLng: 47.15 };
+
+function setOrderType(type){
+  orderType = type;
+  document.getElementById('ot-delivery').classList.toggle('active', type==='delivery');
+  document.getElementById('ot-pickup').classList.toggle('active', type==='pickup');
+  document.getElementById('address-section').style.display = type==='delivery' ? 'block' : 'none';
+  if(type==='pickup'){ userLocation = null; }
+}
+
+function detectLocation(){
+  const status = document.getElementById('location-status');
+  const btn = document.querySelector('.locate-btn');
+  status.className='';
+  if(!navigator.geolocation){
+    status.textContent = 'المتصفح ده مش بيدعم تحديد الموقع';
+    status.className='err';
+    return;
+  }
+  status.textContent = 'جاري تحديد موقعك...';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+    const inRiyadh = lat>=RIYADH_BOUNDS.minLat && lat<=RIYADH_BOUNDS.maxLat && lng>=RIYADH_BOUNDS.minLng && lng<=RIYADH_BOUNDS.maxLng;
+    if(!inRiyadh){
+      userLocation = null;
+      status.textContent = 'التوصيل متاح داخل الرياض بس حاليًا — جرب "استلام من المحل" بدل كده';
+      status.className='err';
+      btn.classList.remove('located');
+      return;
+    }
+    userLocation = { lat, lng };
+    status.textContent = '✅ تم تحديد موقعك بنجاح';
+    status.className='ok';
+    btn.classList.add('located');
+  }, err=>{
+    userLocation = null;
+    status.textContent = 'تعذر تحديد الموقع، تأكد إنك مفعّل صلاحية الموقع من المتصفح';
+    status.className='err';
+  });
+}
+
+async function loadMenu(){
+  const { data, error } = await sb.from('products').select('*').order('category').order('sort_order');
+  if(error){
+    document.getElementById('menu-root').innerHTML = `<p style="text-align:center;color:var(--maroon);">تعذر تحميل المنيو. تأكد من إعداد رابط Supabase في الكود.</p>`;
+    console.error(error);
+    return;
+  }
+  PRODUCTS = data;
+  renderMenu();
+}
+
+function groupByCategory(items){
+  const map = {};
+  items.forEach(p=>{
+    if(!map[p.category]) map[p.category]=[];
+    map[p.category].push(p);
+  });
+  return map;
+}
+
+function renderMenu(){
+  const grouped = groupByCategory(PRODUCTS);
+  const nav = document.getElementById('cat-nav');
+  const root = document.getElementById('menu-root');
+  nav.innerHTML='';
+  root.innerHTML='';
+
+  Object.keys(grouped).forEach((cat,i)=>{
+    const pill = document.createElement('div');
+    pill.className='cat-pill'+(i===0?' active':'');
+    pill.textContent=cat;
+    pill.onclick=()=>{
+      document.getElementById('cat-'+cat).scrollIntoView({behavior:'smooth'});
+      document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));
+      pill.classList.add('active');
+    };
+    nav.appendChild(pill);
+
+    const block = document.createElement('div');
+    block.className='category-block';
+    block.id='cat-'+cat;
+    block.innerHTML = `<div class="cat-header"><span class="tag">${cat}</span></div><div class="grid" id="grid-${cat}"></div>`;
+    root.appendChild(block);
+
+    const grid = block.querySelector('.grid');
+    grouped[cat].forEach(p=>{
+      grid.appendChild(renderCard(p));
+    });
+  });
+}
+
+function renderCard(p){
+  const card = document.createElement('div');
+  const hasPrice = p.price !== null && p.price !== undefined;
+  card.className='card'+(!p.available?' unavailable':'');
+
+  let ribbon='';
+  if(!p.available) ribbon = '<div class="ribbon" style="background:#c0392b;color:#fff;">غير متوفر</div>';
+  else if(p.limited) ribbon = '<div class="ribbon">كمية محدودة</div>';
+
+  let priceHtml = hasPrice
+    ? `<span class="price">${p.price} ريال</span><span class="unit-badge">${p.unit}</span>`
+    : `<span class="note">${p.price_note || 'تواصل للسعر'}</span>`;
+  let extraNote = (hasPrice && p.price_note) ? `<div class="note" style="font-size:11.5px;">${p.price_note}</div>` : '';
+
+  let actionHtml;
+  if(!hasPrice || !p.available){
+    actionHtml = `<div class="contact-note">${!p.available ? 'غير متاح حالياً' : 'للاستفسار عن السعر تواصل معنا'}</div>`;
+  } else {
+    const step = p.unit === 'كيلو' ? 0.25 : 1;
+    actionHtml = `
+      <div class="qty-row">
+        <div class="stepper">
+          <button onclick="stepQty('${p.id}', ${step})">+</button>
+          <input type="text" id="qty-${p.id}" value="0" readonly>
+          <button onclick="stepQty('${p.id}', -${step})">−</button>
+        </div>
+        <button class="add-btn" onclick="addToCart('${p.id}')">أضف للسلة</button>
+      </div>`;
+  }
+
+  card.innerHTML = `
+    ${ribbon}
+    <div class="card-name">${p.name}</div>
+    <div class="card-price-row">${priceHtml}</div>
+    ${extraNote}
+    ${actionHtml}
+  `;
+  return card;
+}
+
+function stepQty(id, delta){
+  const input = document.getElementById('qty-'+id);
+  let val = parseFloat(input.value)||0;
+  val = Math.max(0, +(val+delta).toFixed(2));
+  input.value = val;
+}
+
+function addToCart(id){
+  const input = document.getElementById('qty-'+id);
+  const qty = parseFloat(input.value)||0;
+  if(qty<=0){ return; }
+  const product = PRODUCTS.find(p=>p.id===id);
+  CART[id] = { product, qty: (CART[id]?.qty||0) + qty };
+  input.value = 0;
+  renderCart();
+  pulseCartBtn();
+}
+
+function pulseCartBtn(){
+  const btn = document.getElementById('cart-btn');
+  btn.style.transform='scale(1.08)';
+  setTimeout(()=>btn.style.transform='scale(1)',150);
+}
+
+function removeFromCart(id){
+  delete CART[id];
+  renderCart();
+}
+
+function cartSubtotal(){
+  return Object.values(CART).reduce((sum,item)=> sum + item.product.price*item.qty, 0);
+}
+
+function renderCart(){
+  const body = document.getElementById('cart-body');
+  const items = Object.entries(CART);
+  document.getElementById('cart-count').textContent = items.length;
+  if(items.length===0){
+    body.innerHTML = '<div class="empty-cart">السلة فاضية لسه 🧺</div>';
+    document.getElementById('go-checkout').disabled = true;
+  } else {
+    body.innerHTML = items.map(([id,item])=>`
+      <div class="cart-item">
+        <div>
+          <div class="ci-name">${item.product.name}</div>
+          <div class="ci-meta">${item.qty} ${item.product.unit} × ${item.product.price} ريال</div>
+        </div>
+        <div style="text-align:left;">
+          <div style="font-weight:700;">${(item.qty*item.product.price).toFixed(0)} ريال</div>
+          <button class="ci-remove" onclick="removeFromCart('${id}')">حذف</button>
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('go-checkout').disabled = false;
+  }
+  const subtotal = cartSubtotal();
+  document.getElementById('sum-subtotal').textContent = subtotal.toFixed(0)+' ريال';
+}
+
+function openCart(){
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+function closeAll(){
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('checkout-modal').classList.remove('open');
+}
+
+function openCheckout(){
+  document.getElementById('checkout-modal').classList.add('open');
+  updateCheckoutTotals();
+}
+
+async function applyCoupon(){
+  const code = document.getElementById('f-coupon').value.trim();
+  const msg = document.getElementById('coupon-msg');
+  if(!code){ return; }
+  const { data, error } = await sb.from('coupons').select('*').eq('code', code).eq('active', true).maybeSingle();
+  if(error || !data){
+    msg.style.color = '#c0392b';
+    msg.textContent = 'الكوبون غير صالح';
+    appliedCoupon = null;
+  } else if(data.max_uses && data.used_count >= data.max_uses){
+    msg.style.color = '#c0392b';
+    msg.textContent = 'انتهى الكوبون';
+    appliedCoupon = null;
+  } else {
+    appliedCoupon = data;
+    msg.style.color = 'var(--olive)';
+    msg.textContent = 'تم تفعيل الكوبون ✓';
+  }
+  updateCheckoutTotals();
+}
+
+function updateCheckoutTotals(){
+  const subtotal = cartSubtotal();
+  let discount = 0;
+  if(appliedCoupon){
+    discount = appliedCoupon.discount_type === 'percent'
+      ? subtotal * (appliedCoupon.discount_value/100)
+      : appliedCoupon.discount_value;
+    discount = Math.min(discount, subtotal);
+  }
+  const total = subtotal - discount;
+  document.getElementById('chk-subtotal').textContent = subtotal.toFixed(0)+' ريال';
+  document.getElementById('chk-total').textContent = total.toFixed(0)+' ريال';
+  const row = document.getElementById('chk-discount-row');
+  if(discount>0){
+    row.style.display='flex';
+    document.getElementById('chk-discount').textContent = '-'+discount.toFixed(0)+' ريال';
+  } else {
+    row.style.display='none';
+  }
+}
+
+async function submitOrder(){
+  const name = document.getElementById('f-name').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const notes = document.getElementById('f-notes').value.trim();
+
+  if(!name || !phone){
+    alert('من فضلك اكتب الاسم ورقم الجوال');
+    return;
+  }
+  if(orderType==='delivery' && !userLocation){
+    alert('من فضلك اضغط على "حدد موقعي تلقائيًا" الأول (التوصيل متاح داخل الرياض فقط)');
+    return;
+  }
+  if(Object.keys(CART).length===0){
+    alert('السلة فاضية');
+    return;
+  }
+
+  const address = orderType==='pickup'
+    ? 'استلام من المحل'
+    : `https://www.google.com/maps?q=${userLocation.lat},${userLocation.lng}`;
+
+  const subtotal = cartSubtotal();
+  let discount = 0;
+  if(appliedCoupon){
+    discount = appliedCoupon.discount_type === 'percent'
+      ? subtotal * (appliedCoupon.discount_value/100)
+      : appliedCoupon.discount_value;
+    discount = Math.min(discount, subtotal);
+  }
+  const total = subtotal - discount;
+
+  const submitBtn = document.getElementById('submit-order');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'جاري إرسال الطلب...';
+
+  const { data: order, error: orderErr } = await sb.from('orders').insert({
+    customer_name: name,
+    customer_phone: phone,
+    customer_address: address,
+    order_type: orderType,
+    notes: notes || null,
+    coupon_code: appliedCoupon ? appliedCoupon.code : null,
+    discount, subtotal, total,
+    status: 'pending'
+  }).select().single();
+
+  if(orderErr){
+    alert('حصل خطأ أثناء إرسال الطلب، حاول تاني');
+    submitBtn.disabled=false;
+    submitBtn.textContent='تأكيد الطلب';
+    console.error(orderErr);
+    return;
+  }
+
+  const items = Object.values(CART).map(item=>({
+    order_id: order.id,
+    product_id: item.product.id,
+    product_name: item.product.name,
+    unit: item.product.unit,
+    price: item.product.price,
+    quantity: item.qty,
+    subtotal: item.product.price*item.qty
+  }));
+  await sb.from('order_items').insert(items);
+
+  if(appliedCoupon){
+    await sb.from('coupons').update({ used_count: appliedCoupon.used_count+1 }).eq('id', appliedCoupon.id);
+  }
+
+  document.getElementById('checkout-box').innerHTML = `
+    <div class="success-box">
+      <div class="success-seal">✓</div>
+      <h2>تم استلام طلبك!</h2>
+      <p>هنتواصل معاك على ${phone} لتأكيد الطلب.</p>
+      <p style="color:var(--muted);font-size:12px;">رقم الطلب: ${order.id.slice(0,8)}</p>
+      <button class="checkout-btn" onclick="location.reload()">رجوع للمنيو</button>
+    </div>
+  `;
+  CART = {};
+  appliedCoupon = null;
+}
+
+loadMenu();
+</script>
+</body>
+</html>
