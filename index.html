@@ -56,6 +56,13 @@
     width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;
     font-size:12px;
   }
+  .header-actions{display:flex;gap:10px;align-items:center;}
+  #myorders-btn{
+    background:transparent;color:#fff3e0;border:1.5px solid #e8cfa0;
+    padding:9px 15px;border-radius:30px;
+    font-family:'Tajawal';font-weight:700;font-size:13.5px;
+    display:flex;align-items:center;gap:6px;cursor:pointer;
+  }
 
   /* ---------- Hero ---------- */
   .hero{
@@ -203,6 +210,31 @@
     display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:34px;
   }
 
+  /* ---------- Registration / My Orders / Chat ---------- */
+  .badge{padding:3px 10px;border-radius:12px;font-size:11.5px;font-weight:700;}
+  .badge.pending{background:#f5e3c0;color:#8a5a00;}
+  .badge.accepted{background:#d7ecd4;color:#2c6b2f;}
+  .badge.rejected{background:#f5d3d3;color:#a12b2b;}
+  .badge.completed{background:#d3e2f5;color:#1f4c8a;}
+  .badge.archived{background:#e3e3e3;color:#666;}
+
+  .order-card{
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;margin-bottom:14px;
+  }
+  .order-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .order-total{font-size:12.5px;color:var(--muted);margin-bottom:10px;}
+  .chat-box{
+    max-height:140px;overflow-y:auto;background:var(--bg);border-radius:8px;
+    padding:8px;display:flex;flex-direction:column;gap:6px;margin-bottom:8px;
+  }
+  .msg{max-width:80%;padding:6px 10px;border-radius:10px;font-size:12.5px;line-height:1.4;}
+  .msg.customer{align-self:flex-start;background:var(--maroon);color:#fff3e0;border-bottom-left-radius:2px;}
+  .msg.admin{align-self:flex-end;background:var(--olive);color:#fff;border-bottom-right-radius:2px;}
+  .chat-input-row{display:flex;gap:6px;}
+  .chat-input-row input{flex:1;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12.5px;font-family:'Tajawal';}
+  .chat-input-row button{background:var(--maroon);color:#fff3e0;border:none;border-radius:8px;padding:0 14px;font-size:12.5px;font-weight:700;cursor:pointer;}
+
   footer{text-align:center;padding:24px;color:var(--muted);font-size:12.5px;}
 
   @media (max-width:480px){
@@ -221,9 +253,12 @@
       <small>أكل بيتي مصري أصيل</small>
     </div>
   </div>
-  <button id="cart-btn" onclick="openCart()">
-    🧺 السلة <span id="cart-count">0</span>
-  </button>
+  <div class="header-actions">
+    <button id="myorders-btn" onclick="openMyOrders()">📦 طلباتي</button>
+    <button id="cart-btn" onclick="openCart()">
+      🧺 السلة <span id="cart-count">0</span>
+    </button>
+  </div>
 </header>
 
 <div class="hero">
@@ -289,6 +324,28 @@
       <div class="row-between total"><span>الإجمالي</span><span id="chk-total">0 ريال</span></div>
     </div>
     <button class="checkout-btn" id="submit-order" onclick="submitOrder()">تأكيد الطلب</button>
+  </div>
+</div>
+
+<!-- Registration gate -->
+<div class="modal" id="register-modal">
+  <div class="modal-box" style="text-align:center;">
+    <h2>أهلاً بيك 👋</h2>
+    <p style="color:var(--muted);font-size:13.5px;margin-top:-8px;">سجّل بياناتك عشان تقدر تطلب وتتابع حالة طلباتك</p>
+    <label style="text-align:right;">الاسم</label>
+    <input type="text" id="reg-name" placeholder="اسمك">
+    <label style="text-align:right;">رقم الجوال</label>
+    <input type="tel" id="reg-phone" placeholder="05xxxxxxxx">
+    <button class="checkout-btn" onclick="registerCustomer()">دخول</button>
+  </div>
+</div>
+
+<!-- My orders tracking + chat -->
+<div class="modal" id="myorders-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <h2>طلباتي 📦</h2>
+    <div id="myorders-list"></div>
+    <button class="checkout-btn" style="background:var(--muted);margin-top:6px;" onclick="closeAll()">إغلاق</button>
   </div>
 </div>
 
@@ -506,6 +563,7 @@ function closeAll(){
   document.getElementById('overlay').classList.remove('open');
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('checkout-modal').classList.remove('open');
+  document.getElementById('myorders-modal').classList.remove('open');
 }
 
 function openCheckout(){
@@ -638,6 +696,106 @@ async function submitOrder(){
   appliedCoupon = null;
 }
 
+// ============================================
+// تسجيل العميل + متابعة الطلبات + الشات
+// ============================================
+let CURRENT_CUSTOMER = null;
+
+function loadCustomerFromStorage(){
+  const raw = localStorage.getItem('bam_customer');
+  if(raw){ try{ CURRENT_CUSTOMER = JSON.parse(raw); }catch(e){ CURRENT_CUSTOMER = null; } }
+}
+
+function prefillCheckoutFields(){
+  if(!CURRENT_CUSTOMER) return;
+  document.getElementById('f-name').value = CURRENT_CUSTOMER.name;
+  document.getElementById('f-phone').value = CURRENT_CUSTOMER.phone;
+}
+
+async function registerCustomer(){
+  const name = document.getElementById('reg-name').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  if(!name || !phone){ alert('اكتب اسمك ورقم جوالك'); return; }
+
+  const { data: existing } = await sb.from('customers').select('*').eq('phone', phone).maybeSingle();
+  if(existing){
+    CURRENT_CUSTOMER = { name: existing.name, phone: existing.phone };
+  } else {
+    await sb.from('customers').insert({ name, phone });
+    CURRENT_CUSTOMER = { name, phone };
+  }
+  localStorage.setItem('bam_customer', JSON.stringify(CURRENT_CUSTOMER));
+  document.getElementById('register-modal').classList.remove('open');
+  prefillCheckoutFields();
+}
+
+async function openMyOrders(){
+  if(!CURRENT_CUSTOMER){ document.getElementById('register-modal').classList.add('open'); return; }
+  document.getElementById('myorders-modal').classList.add('open');
+  await refreshMyOrders();
+}
+
+function statusLabelC(s){
+  return {pending:'قيد الانتظار', accepted:'مقبول', rejected:'مرفوض', completed:'مكتمل', archived:'مؤرشف'}[s] || s;
+}
+
+async function refreshMyOrders(){
+  const list = document.getElementById('myorders-list');
+  list.innerHTML = '<p style="text-align:center;color:var(--muted);">جاري التحميل...</p>';
+  const { data: orders, error } = await sb.from('orders').select('*').eq('customer_phone', CURRENT_CUSTOMER.phone).order('created_at', { ascending:false });
+  if(error || !orders || orders.length===0){
+    list.innerHTML = '<p style="text-align:center;color:var(--muted);">لسه معملتش أي طلب</p>';
+    return;
+  }
+  list.innerHTML = '';
+  orders.forEach(o=>{
+    const card = document.createElement('div');
+    card.className='order-card';
+    card.innerHTML = `
+      <div class="order-head">
+        <b>طلب #${o.id.slice(0,6)}</b>
+        <span class="badge ${o.status}">${statusLabelC(o.status)}</span>
+      </div>
+      <div class="order-total">${Number(o.total).toFixed(0)} ريال — ${new Date(o.created_at).toLocaleString('ar-SA')}</div>
+      <div class="chat-box" id="chat-${o.id}"><p style="text-align:center;color:var(--muted);font-size:12px;">جاري تحميل المحادثة...</p></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input-${o.id}" placeholder="اكتب رسالة للأدمن...">
+        <button onclick="sendMessage('${o.id}')">إرسال</button>
+      </div>
+    `;
+    list.appendChild(card);
+    loadChat(o.id);
+  });
+}
+
+async function loadChat(orderId){
+  const box = document.getElementById('chat-'+orderId);
+  const { data: msgs } = await sb.from('order_messages').select('*').eq('order_id', orderId).order('created_at');
+  if(!box) return;
+  if(!msgs || msgs.length===0){
+    box.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:12px;">مفيش رسايل لسه</p>';
+    return;
+  }
+  box.innerHTML = msgs.map(m=>`<div class="msg ${m.sender}"><span>${m.message}</span></div>`).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendMessage(orderId){
+  const input = document.getElementById('chat-input-'+orderId);
+  const text = input.value.trim();
+  if(!text) return;
+  input.value='';
+  await sb.from('order_messages').insert({ order_id: orderId, sender:'customer', message: text });
+  await loadChat(orderId);
+}
+
+// ---------------- Bootstrap ----------------
+loadCustomerFromStorage();
+if(!CURRENT_CUSTOMER){
+  document.getElementById('register-modal').classList.add('open');
+} else {
+  prefillCheckoutFields();
+}
 loadMenu();
 </script>
 </body>
